@@ -80,7 +80,6 @@ def set_image():
 def main(argv):
     global image_provider
     image_provider = ImageProvider()
-    image_provider.start()
     app.run(host='0.0.0.0')
 
 
