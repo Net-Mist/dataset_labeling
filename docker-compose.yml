@@ -1,5 +1,6 @@
 version: "2.3"
+
 services:
   web:
-    image: Net-Mist/dataset_labeling:0.1
+    image: net-mist/dataset_labeling:0.1
     build: .
