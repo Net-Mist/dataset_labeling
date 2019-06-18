@@ -13,7 +13,7 @@ export default {
     href: String, // href of the image showing in the svg
     drawable: Boolean, // if true then update the points linked to drawable_name
     height: String,
-    width:  String
+    width: String
   },
   data() {
     return {};
@@ -21,7 +21,89 @@ export default {
   watch: {},
   computed: {
     image_id: function() {
-      return this.class_name + "_image"
+      return this.class_name + "_image";
+    }
+  },
+  methods: {
+    add_point(group, x, y) {
+      let vm = this;
+      function handleDrag() {
+        // move the point
+        d3.select(this)
+          .attr("cx", d3.event.x)
+          .attr("cy", d3.event.y);
+
+        // find coordinates of the second point
+        let circles = d3.select(this.parentNode).selectAll("circle");
+        let newPoints = [];
+        for (let circle of circles._groups[0]) {
+          let c = d3.select(circle);
+          newPoints.push([c.attr("cx"), c.attr("cy")]);
+        }
+
+        // update polyline
+        d3.select(this.parentNode)
+          .selectAll("polyline")
+          .remove();
+        vm.add_rectangle(
+          d3.select(this.parentNode),
+          newPoints[0],
+          newPoints[1]
+        );
+      }
+      group
+        .append("circle")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", 8)
+        .attr("fill", "yellow")
+        .attr("stroke", "#000")
+        .attr("is-handle", "true")
+        .attr("cursor", "move")
+        .call(d3.drag().on("drag", handleDrag));
+    },
+
+    add_rectangle(group, p1, p2) {
+      let x_min = Math.min(p1[0], p2[0]);
+      let x_max = Math.max(p1[0], p2[0]);
+      let y_min = Math.min(p1[1], p2[1]);
+      let y_max = Math.max(p1[1], p2[1]);
+
+      let rectPoints = [
+        [x_min, y_min],
+        [x_min, y_max],
+        [x_max, y_max],
+        [x_max, y_min],
+        [x_min, y_min]
+      ];
+
+      group
+        .append("polyline")
+        .attr("points", rectPoints)
+        .style("fill", "none")
+        .attr("stroke", "yellow");
+    },
+
+    load_data(data) {
+      let svg = d3.select("svg." + this.class_name);
+      let g = svg.select("g");
+
+      for (let rectangle of data) {
+        let newGroup = g.append("g");
+        this.add_point(newGroup, rectangle["xMin"], rectangle["yMin"]);
+        this.add_point(newGroup, rectangle["xMax"], rectangle["yMax"]);
+        this.add_rectangle(
+          newGroup,
+          [rectangle["xMin"], rectangle["yMin"]],
+          [rectangle["xMax"], rectangle["yMax"]]
+        );
+      }
+    },
+
+    clear() {
+      let svg = d3.select("svg." + this.class_name);
+      let g = svg.select("g");
+      g.selectAll("g").remove();
     }
   },
   mounted() {
@@ -42,92 +124,27 @@ export default {
 
     svg.on("mouseup", function() {
       if (!isDrawing) {
-        firstPoint = [d3.mouse(this)[0], d3.mouse(this)[1]];
-        // Draw the new point
         newGroup = g.append("g");
-        newGroup
-          .append("circle")
-          .attr("cx", firstPoint[0])
-          .attr("cy", firstPoint[1])
-          .attr("r", 8)
-          .attr("fill", "yellow")
-          .attr("stroke", "#000")
-          .attr("is-handle", "true")
-          .attr("cursor", "move")
-          .call(d3.drag().on("drag", handleDrag));
-
+        firstPoint = [d3.mouse(this)[0], d3.mouse(this)[1]];
+        vm.add_point(newGroup, firstPoint[0], firstPoint[1]);
         isDrawing = true;
       } else {
         let lastPoint = [d3.mouse(this)[0], d3.mouse(this)[1]];
-
-        newGroup
-          .append("circle")
-          .attr("cx", lastPoint[0])
-          .attr("cy", lastPoint[1])
-          .attr("r", 8)
-          .attr("fill", "yellow")
-          .attr("stroke", "#000")
-          .attr("is-handle", "true")
-          .attr("cursor", "move")
-          .call(d3.drag().on("drag", handleDrag));
-
+        vm.add_point(newGroup, lastPoint[0], lastPoint[1]);
         isDrawing = false;
         newGroup.select("polyline").remove();
-        drawRectangle(newGroup, lastPoint, firstPoint);
+        vm.add_rectangle(newGroup, lastPoint, firstPoint);
       }
     });
 
     svg.on("mousemove", function() {
       if (!isDrawing) return;
-      // let g = d3.select('g.drawPoly');
       newGroup.select("polyline").remove();
-      drawRectangle(newGroup, firstPoint, [
+      vm.add_rectangle(newGroup, firstPoint, [
         d3.mouse(this)[0],
         d3.mouse(this)[1]
       ]);
     });
-
-    function drawRectangle(group, p1, p2) {
-      let x_min = Math.min(p1[0], p2[0]);
-      let x_max = Math.max(p1[0], p2[0]);
-      let y_min = Math.min(p1[1], p2[1]);
-      let y_max = Math.max(p1[1], p2[1]);
-
-      let rectPoints = [
-        [x_min, y_min],
-        [x_min, y_max],
-        [x_max, y_max],
-        [x_max, y_min],
-        [x_min, y_min]
-      ];
-
-      group
-        .append("polyline")
-        .attr("points", rectPoints)
-        .style("fill", "none")
-        .attr("stroke", "yellow");
-    }
-
-    function handleDrag() {
-      // move the point
-      d3.select(this)
-        .attr("cx", d3.event.x)
-        .attr("cy", d3.event.y);
-
-      // find coordinates of the second point
-      let circles = d3.select(this.parentNode).selectAll("circle");
-      let newPoints = [];
-      for (let circle of circles._groups[0]) {
-        let c = d3.select(circle);
-        newPoints.push([c.attr("cx"), c.attr("cy")]);
-      }
-
-      // update polyline
-      d3.select(this.parentNode)
-        .selectAll("polyline")
-        .remove();
-      drawRectangle(d3.select(this.parentNode), newPoints[0], newPoints[1]);
-    }
 
     // be sure the image is not draggable
     document.getElementById(vm.image_id).ondragstart = function() {

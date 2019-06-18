@@ -4,11 +4,7 @@
       v-toolbar-side-icon(@click.stop="gui.nav_drawer_visible = !gui.nav_drawer_visible")
       v-toolbar-title Dataset labeling
 
-    v-navigation-drawer(v-model="gui.nav_drawer_visible" absolute overflow app clipped)          
-      //- v-toolbar(flat)
-      //-   v-toolbar-side-icon(@click.stop="gui.nav_drawer_visible = !gui.nav_drawer_visible")
-      //-   v-toolbar-title Options
-        
+    v-navigation-drawer(v-model="gui.nav_drawer_visible" absolute overflow app clipped)
       v-list        
         v-list-tile
           v-btn(color="indigo" @click="update_list_of_rectangles()") Send (s)
@@ -21,7 +17,7 @@
       v-container(grid-list-md fluid)
         v-layout(justify-space-around align-space-around)
           v-flex(xs10)
-            rectangle(:href="image.src" :width="image.width" :height="image.height" drawable=true class_name="rectangles")
+            rectangle(:href="image.src" :width="image.width" :height="image.height" drawable=true class_name="rectangles" ref="drawing_area")
 
     v-footer(app)
       span(class="px-3") &copy; Sébastien IOOSS {{ new Date().getFullYear() }}
@@ -31,6 +27,7 @@
 <script>
 import rectangle from "./components/Rectangle";
 const axios = require("axios");
+const d3 = require("d3");
 
 export default {
   name: "App",
@@ -63,6 +60,8 @@ export default {
           console.log(response);
         });
 
+      this.clear_list_of_rectangles();
+
       axios.get("/get_image").then(function(response) {
         // handle success
         console.log(response);
@@ -70,9 +69,17 @@ export default {
         vm.image.src = "/" + response["data"]["image_path"];
         vm.image.width = response["data"]["width"] + "px";
         vm.image.height = response["data"]["height"] + "px";
-      });
 
-      this.clear_list_of_rectangles();
+        // parse data
+        if (response["data"]["data"]) {
+          console.log("recived data !!!!");
+          console.log(response["data"]["data"]);
+
+          vm.$refs.drawing_area.load_data(
+            response["data"]["data"]["rectangles"]
+          );
+        }
+      });
     },
     clear_list_of_rectangles() {
       let element = document.getElementsByClassName("rectangles");
@@ -111,6 +118,14 @@ export default {
       vm.image.src = "/" + response["data"]["image_path"];
       vm.image.width = response["data"]["width"] + "px";
       vm.image.height = response["data"]["height"] + "px";
+
+      // parse data
+      if (response["data"]["data"]) {
+        console.log("recived data !!!!");
+        console.log(response["data"]["data"]);
+
+        vm.$refs.drawing_area.load_data(response["data"]["data"]["rectangles"]);
+      }
     });
 
     document.addEventListener(
