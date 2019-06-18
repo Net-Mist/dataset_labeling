@@ -61,6 +61,7 @@ class ImageProvider:
                 new_list.append(image_name)
         self.images_list = new_list
         logging.info(f"there are {len(self.images_list)} images to annotate")
+        self.n_images = len(self.images_list)
 
     def get_image(self):
         with self.lock:
@@ -79,7 +80,12 @@ class ImageProvider:
         else:
             data = {}
 
-        return jsonify({"image_path": image_path, "data": data, "width": width, "height": height})
+        return jsonify({"image_path": image_path,
+                        "data": data, 
+                        "width": width, 
+                        "height": height,
+                        "image_id": self.current_image,
+                        "n_images": self.n_images})
 
 
 app = Flask(__name__)
@@ -104,7 +110,7 @@ def set_image():
 
     json_name = os.path.splitext(os.path.split(message['image_src'])[1])[0] + ".json"
 
-    with open(os.path.join(FLAGS.human_annotations_path, json_name), 'w') as outfile:  
+    with open(os.path.join(FLAGS.human_annotations_path, json_name), 'w') as outfile:
         json.dump({"rectangles": message["rectangles"]}, outfile)
 
     return "ok"

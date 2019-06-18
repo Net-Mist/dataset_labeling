@@ -16,7 +16,9 @@ export default {
     width: String
   },
   data() {
-    return {};
+    return {
+      selected_group: null // the last d3 group created or selected
+    };
   },
   watch: {},
   computed: {
@@ -51,6 +53,10 @@ export default {
           newPoints[1]
         );
       }
+      function handleClick() {
+        console.log("click");
+        vm.selected_group = d3.select(this.parentNode);
+      }
       group
         .append("circle")
         .attr("cx", x)
@@ -60,6 +66,7 @@ export default {
         .attr("stroke", "#000")
         .attr("is-handle", "true")
         .attr("cursor", "move")
+        .on("mousedown", handleClick)
         .call(d3.drag().on("drag", handleDrag));
     },
 
@@ -134,6 +141,7 @@ export default {
         isDrawing = false;
         newGroup.select("polyline").remove();
         vm.add_rectangle(newGroup, lastPoint, firstPoint);
+        vm.selected_group = newGroup;
       }
     });
 
@@ -145,6 +153,24 @@ export default {
         d3.mouse(this)[1]
       ]);
     });
+
+    document.addEventListener(
+      "keydown",
+      event => {
+        const keyName = event.key;
+        console.log(keyName);
+        if (keyName == "Escape") {
+          // Cancel drawing
+          if (isDrawing) {
+            isDrawing = false;
+            newGroup.remove();
+          } else {
+            vm.selected_group.remove();
+          }
+        }
+      },
+      false
+    );
 
     // be sure the image is not draggable
     document.getElementById(vm.image_id).ondragstart = function() {
