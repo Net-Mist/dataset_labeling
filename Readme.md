@@ -13,9 +13,9 @@ then you can start the serving doing `docker-compose up`
 
 for instance, for testing purposes:
 ```bash
-export IMAGES_PATH=
-export HUMAN_ANNOTATION_PATH=
-export MODEL_ANNOTATION_PATH=
+export IMAGES_PATH=$(pwd)/assets/images
+export HUMAN_ANNOTATIONS_PATH=$(pwd)/assets/human_annotations
+export MODEL_ANNOTATIONS_PATH=$(pwd)/assets/model_annotations
 docker-compose up 
 ```
 
@@ -28,3 +28,4 @@ python3 app.py --images_path= \
                --model_annotations_path=
 ```
 
+the images need to be in the static folder to be served with flask

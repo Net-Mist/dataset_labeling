@@ -1,6 +1,6 @@
 <template>
-  <svg :class="class_name" width="640px" height="480px">
-    <image :id="image_id" :href="href" x="0" y="0" height="480px" width="640px"></image>
+  <svg :class="class_name" :width="width" :height="height">
+    <image :id="image_id" :href="href" x="0" y="0" :height="height" :width="width"></image>
   </svg>
 </template>
 
@@ -11,7 +11,9 @@ export default {
   props: {
     class_name: String,
     href: String, // href of the image showing in the svg
-    drawable: Boolean // if true then update the points linked to drawable_name
+    drawable: Boolean, // if true then update the points linked to drawable_name
+    height: String,
+    width:  String
   },
   data() {
     return {};

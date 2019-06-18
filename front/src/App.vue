@@ -13,12 +13,15 @@
         v-list-tile
           v-btn(color="indigo" @click="update_list_of_rectangles()") Send
           v-btn(color="indigo" @click="clear_list_of_rectangles()") Clear
+        v-divider
+        v-list-tile
+          v-btn(color="indigo") Previous
         
     v-content
       v-container(grid-list-md fluid)
         v-layout(justify-space-around align-space-around)
           v-flex(xs10)
-            rectangle(:href="image_src" drawable=true class_name="rectangles")
+            rectangle(:href="image.src" :width="image.width" :height="image.height" drawable=true class_name="rectangles")
 
     v-footer(app)
       span(class="px-3") &copy; Sébastien IOOSS {{ new Date().getFullYear() }}
@@ -36,6 +39,7 @@ export default {
   },
   methods: {
     update_list_of_rectangles() {
+      let vm = this;
       let element = document.getElementsByClassName("rectangles");
       let polylines = element[0].getElementsByTagName("polyline");
 
@@ -50,7 +54,25 @@ export default {
       }
       this.rectangles = points;
 
-      axios.post("/set_image", { rectangles: this.rectangles });
+      axios
+        .post("/set_image", {
+          rectangles: this.rectangles,
+          image_src: this.image.src
+        })
+        .then(function(response) {
+          console.log(response);
+        });
+
+      axios.get("/get_image").then(function(response) {
+        // handle success
+        console.log(response);
+        console.log(response["data"]);
+        vm.image.src = "/" + response["data"]["image_path"];
+        vm.image.width = response["data"]["width"] + "px";
+        vm.image.height = response["data"]["height"] + "px";
+      });
+
+      this.clear_list_of_rectangles();
     },
     clear_list_of_rectangles() {
       let element = document.getElementsByClassName("rectangles");
@@ -71,14 +93,24 @@ export default {
       gui: {
         nav_drawer_visible: true
       },
-      image_src: "https://picsum.photos/200/300",
+      image: {
+        src: "https://picsum.photos/200/300",
+        width: "200px",
+        height: "300px"
+      },
+
       rectangles: []
     };
   },
   mounted() {
+    let vm = this;
     axios.get("/get_image").then(function(response) {
       // handle success
       console.log(response);
+      console.log(response["data"]);
+      vm.image.src = "/" + response["data"]["image_path"];
+      vm.image.width = response["data"]["width"] + "px";
+      vm.image.height = response["data"]["height"] + "px";
     });
   }
 };
