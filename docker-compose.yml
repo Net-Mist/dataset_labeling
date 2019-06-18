@@ -10,4 +10,5 @@ services:
       - ${MODEL_ANNOTATIONS_PATH}:/opt/static/model_annotations
     ports:
       - 5000:5000
+    user: 1000:1000
       

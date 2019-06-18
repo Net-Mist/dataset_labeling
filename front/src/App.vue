@@ -11,8 +11,8 @@
         
       v-list        
         v-list-tile
-          v-btn(color="indigo" @click="update_list_of_rectangles()") Send
-          v-btn(color="indigo" @click="clear_list_of_rectangles()") Clear
+          v-btn(color="indigo" @click="update_list_of_rectangles()") Send (s)
+          v-btn(color="indigo" @click="clear_list_of_rectangles()") Clear (c)
         v-divider
         v-list-tile
           v-btn(color="indigo") Previous
@@ -112,6 +112,21 @@ export default {
       vm.image.width = response["data"]["width"] + "px";
       vm.image.height = response["data"]["height"] + "px";
     });
+
+    document.addEventListener(
+      "keydown",
+      event => {
+        const keyName = event.key;
+        console.log(keyName);
+        if (keyName == "s") {
+          vm.update_list_of_rectangles();
+        }
+        if (keyName == "c") {
+          vm.clear_list_of_rectangles();
+        }
+      },
+      false
+    );
   }
 };
 </script>
