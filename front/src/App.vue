@@ -26,7 +26,7 @@
         v-divider
         
     v-content
-      v-alert(:value="true" type="info" dismissible) Press Escape to remove the last active shape
+      v-alert(:value="true" type="info" dismissible) If you want to edit you last image, press a, edit the image and press s to re-send data
       v-container(grid-list-md fluid)
         v-layout(justify-space-around align-space-around)
           v-flex(xs10)
