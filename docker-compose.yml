@@ -1,7 +1,7 @@
 version: "2.3"
 
 services:
-  web1:
+  web:
     image: net-mist/dataset_labeling:0.3
     build: .
     volumes:
@@ -9,6 +9,6 @@ services:
       - ${HUMAN_ANNOTATIONS_PATH}:/opt/static/human_annotations
       - ${MODEL_ANNOTATIONS_PATH}:/opt/static/model_annotations
     ports:
-      - 5001:5000
+      - 5000:5000
     user: 1000:1000
       
