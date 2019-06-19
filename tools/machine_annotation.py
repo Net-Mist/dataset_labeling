@@ -57,7 +57,8 @@ def main(argv):
         # Now we can run inference
         first_iter = True
         for image_id in tqdm(range(len(images_list))):
-            image = cv2.imread(os.path.join(FLAGS.images_path, images_list[image_id]))
+            image = cv2.cvtColor(cv2.imread(os.path.join(FLAGS.images_path, images_list[image_id])), cv2.COLOR_BGR2RGB)   
+            
             if first_iter:
                 print(image.shape)
                 first_iter=False

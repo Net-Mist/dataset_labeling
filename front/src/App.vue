@@ -4,7 +4,7 @@
       v-toolbar-side-icon(@click.stop="gui.nav_drawer_visible = !gui.nav_drawer_visible")
       v-toolbar-title Dataset labeling
       //- v-spacer
-      v-toolbar-title(class="body-2 grey--text") {{gui.image_id}} / {{gui.n_images}}
+      v-toolbar-title(class="body-2 grey--text") team : {{gui.image_id}} / {{gui.n_images}}, user : {{n_images_done_by_user}}
 
 
     v-navigation-drawer(v-model="gui.nav_drawer_visible" absolute overflow app clipped)
@@ -12,7 +12,7 @@
         v-list-tile
           v-tooltip(bottom)
             template(v-slot:activator="{ on }")
-              v-btn(color="indigo" @click="update_list_of_rectangles()" v-on="on") Send (s)
+              v-btn(color="indigo" @click="send()" v-on="on") Send (s)
             span Press s instead of clicking here
         v-list-tile
           v-tooltip(bottom)
@@ -21,7 +21,8 @@
             span Press c instead of clicking here
           
         v-list-tile
-          v-btn(color="indigo" disabled) Previous (P)
+          v-btn(color="indigo" :disabled="!previous_image.src" v-if="!work_on_previous" @click="go_to_previous_image()") Previous (a)
+          v-btn(color="indigo" v-if="work_on_previous" @click="go_to_next_image()") Next (n)
         v-divider
         
     v-content
@@ -47,6 +48,31 @@ export default {
     rectangle
   },
   methods: {
+    send() {
+      let vm = this;
+      vm.update_list_of_rectangles();
+      axios
+        .post("/set_image", {
+          rectangles: this.rectangles,
+          image_src: this.image.src
+        })
+        .then(function(response) {
+          console.log(response);
+        });
+
+      if (!this.work_on_previous) {
+        // save data in previous image
+        this.previous_image.rectangles = this.rectangles;
+        this.previous_image.src = this.image.src;
+        this.clear_list_of_rectangles();
+        this.get_image_caller();
+        this.n_images_done_by_user++;
+      } else {
+        this.work_on_previous = false;
+        this.go_to_next_image();
+      }
+    },
+
     update_list_of_rectangles() {
       let vm = this;
       let element = document.getElementsByClassName("rectangles");
@@ -62,18 +88,6 @@ export default {
         });
       }
       this.rectangles = points;
-
-      axios
-        .post("/set_image", {
-          rectangles: this.rectangles,
-          image_src: this.image.src
-        })
-        .then(function(response) {
-          console.log(response);
-        });
-
-      this.clear_list_of_rectangles();
-      this.get_image_caller();
     },
 
     get_image_caller() {
@@ -88,7 +102,7 @@ export default {
 
         // parse data
         if (response["data"]["data"] !== {}) {
-          console.log(response["data"]["data"])
+          console.log(response["data"]["data"]);
           vm.$refs.drawing_area.load_data(
             response["data"]["data"]["rectangles"]
           );
@@ -108,6 +122,37 @@ export default {
       }
 
       this.rectangles = [];
+    },
+
+    go_to_previous_image() {
+      this.update_list_of_rectangles();
+      // save in next image
+      this.next_image.rectangles = this.rectangles;
+      this.next_image.src = this.image.src;
+
+      // load data of previous image
+      this.image.src = this.previous_image.src;
+      this.rectangles = this.previous_image.rectangles;
+
+      // draw the rectangles of the previous image
+      this.$refs.drawing_area.clear();
+      this.$refs.drawing_area.load_data(this.rectangles);
+      this.work_on_previous = true;
+    },
+    go_to_next_image() {
+      this.update_list_of_rectangles();
+      // save in previous image
+      this.previous_image.rectangles = this.rectangles;
+      this.previous_image.src = this.image.src;
+
+      // load data of next image
+      this.image.src = this.next_image.src;
+      this.rectangles = this.next_image.rectangles;
+
+      // draw the rectangles of the previous image
+      this.$refs.drawing_area.clear();
+      this.$refs.drawing_area.load_data(this.rectangles);
+      this.work_on_previous = false;
     }
   },
   data() {
@@ -122,13 +167,24 @@ export default {
         width: "200px",
         height: "300px"
       },
+      previous_image: {
+        rectangles: [],
+        src: null
+      },
+      // only usefull when go to previous
+      next_image: {
+        rectangles: [],
+        src: []
+      },
+      work_on_previous: false,
 
-      rectangles: []
+      rectangles: [],
+      n_images_done_by_user: 0
     };
   },
   mounted() {
     let vm = this;
-    vm.get_image_caller()
+    vm.get_image_caller();
 
     document.addEventListener(
       "keydown",
@@ -136,10 +192,16 @@ export default {
         const keyName = event.key;
         console.log(keyName);
         if (keyName == "s") {
-          vm.update_list_of_rectangles();
+          vm.send();
         }
         if (keyName == "c") {
           vm.clear_list_of_rectangles();
+        }
+        if (keyName == "a") {
+          vm.go_to_previous_image();
+        }
+        if (keyName == "n") {
+          vm.go_to_next_image();
         }
       },
       false

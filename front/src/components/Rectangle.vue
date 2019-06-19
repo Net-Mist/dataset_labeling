@@ -63,6 +63,7 @@ export default {
         .attr("cy", y)
         .attr("r", 8)
         .attr("fill", "yellow")
+        .attr("opacity", "0.3")
         .attr("stroke", "#000")
         .attr("is-handle", "true")
         .attr("cursor", "move")
