@@ -10,14 +10,13 @@ from tqdm import tqdm
 
 coloredlogs.install(level="DEBUG")
 
-flags.DEFINE_string("model_path", "/mnt/nas/tf_experiments/vca/export_all_data_2_3/frozen_inference_graph.pb", "Path of the model to load and execute")
-flags.DEFINE_string("images_path", "/mnt/nas/datasets/vca/images_batch07_all/2019-06-17", "Path where are stored the images to annotate")
-flags.DEFINE_string("model_annotations_path", "/mnt/nas/datasets/vca/images_batch07_machine_annotation", "Path where are stored model annotation for helping human")
+flags.DEFINE_string("model_path", None, "Path of the model to load and execute, for instance /mnt/nas/.../frozen_inference_graph.pb")
+flags.DEFINE_string("images_path", None, "Path where are stored the images to annotate")
+flags.DEFINE_string("model_annotations_path", None, "Path where are stored model annotation for helping human")
 
-
-# flags.mark_flag_as_required("images_path")
-# flags.mark_flag_as_required("images_path")
-# flags.mark_flag_as_required("model_annotations_path")
+flags.mark_flag_as_required("images_path")
+flags.mark_flag_as_required("images_path")
+flags.mark_flag_as_required("model_annotations_path")
 
 FLAGS = flags.FLAGS
 
