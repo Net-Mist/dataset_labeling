@@ -24,13 +24,18 @@
           v-btn(color="indigo" :disabled="!previous_image.src" v-if="!work_on_previous" @click="go_to_previous_image()") Previous (a)
           v-btn(color="indigo" v-if="work_on_previous" @click="go_to_next_image()") Next (n)
         v-divider
+
+        v-list-tile
+          v-flex(xs12)
+            v-slider(v-model="gui.slider" label="Radius" thumb-label min=6 max=20)
         
     v-content
-      v-alert(:value="true" type="info" dismissible) If you want to edit you last image, press a, edit the image and press s to re-send data
+      v-alert(:value="true" type="info" dismissible) If you want to edit you last image, press a, edit the image and press s to re-send data {{gui.slider}}
       v-container(grid-list-md fluid)
         v-layout(justify-space-around align-space-around)
           v-flex(xs10)
-            rectangle(:href="image.src" :width="image.width" :height="image.height" drawable=true class_name="rectangles" ref="drawing_area")
+            rectangle(:href="image.src" :width="image.width" :height="image.height" 
+                      drawable=true class_name="rectangles" ref="drawing_area" :radius="gui.slider")
 
     v-footer(app)
       span(class="px-3") &copy; Sébastien IOOSS {{ new Date().getFullYear() }}
@@ -160,7 +165,8 @@ export default {
       gui: {
         nav_drawer_visible: true,
         image_id: 0,
-        n_images: 0
+        n_images: 0,
+        slider: 6
       },
       image: {
         src: "https://picsum.photos/200/300",

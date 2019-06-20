@@ -13,7 +13,8 @@ export default {
     href: String, // href of the image showing in the svg
     drawable: Boolean, // if true then update the points linked to drawable_name
     height: String,
-    width: String
+    width: String,
+    radius: Number
   },
   data() {
     return {
@@ -61,7 +62,7 @@ export default {
         .append("circle")
         .attr("cx", x)
         .attr("cy", y)
-        .attr("r", 8)
+        .attr("r", vm.radius)
         .attr("fill", "yellow")
         .attr("opacity", "0.3")
         .attr("stroke", "#000")
@@ -86,7 +87,7 @@ export default {
       ];
 
       group
-        .append("polyline")
+        .insert("polyline", ":first-child")
         .attr("points", rectPoints)
         .style("fill", "none")
         .attr("stroke", "yellow");
