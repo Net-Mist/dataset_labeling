@@ -16,6 +16,8 @@ for instance, for testing purposes:
 export IMAGES_PATH=$(pwd)/assets/images
 export HUMAN_ANNOTATIONS_PATH=$(pwd)/assets/human_annotations
 export MODEL_ANNOTATIONS_PATH=$(pwd)/assets/model_annotations
+export CLASS_NAME=truck,red,orange,black
+export CLASS_COLORS=#e5ff00,#ff0000,#ff7f00,#000000  
 docker-compose up 
 ```
 

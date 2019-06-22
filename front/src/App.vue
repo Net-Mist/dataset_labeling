@@ -1,13 +1,13 @@
 <template lang="pug">
   v-app(dark)
     v-toolbar(app absolute clipped-left)
-      v-toolbar-side-icon(@click.stop="gui.nav_drawer_visible = !gui.nav_drawer_visible")
+      v-toolbar-side-icon(@click.stop="gui.navDrawerVisible = !gui.navDrawerVisible")
       v-toolbar-title Dataset labeling
       //- v-spacer
-      v-toolbar-title(class="body-2 grey--text") team : {{gui.image_id}} / {{gui.n_images}}, user : {{n_images_done_by_user}}
+      v-toolbar-title(class="body-2 grey--text") team : {{gui.nImagesDoneByTeam}} / {{gui.nImagesToDoByTeam}}, user : {{nImagesDoneByUser}}
 
 
-    v-navigation-drawer(v-model="gui.nav_drawer_visible" absolute overflow app clipped)
+    v-navigation-drawer(v-model="gui.navDrawerVisible" absolute overflow app clipped)
       v-list        
         v-list-tile
           v-tooltip(bottom)
@@ -17,25 +17,31 @@
         v-list-tile
           v-tooltip(bottom)
             template(v-slot:activator="{ on }")
-              v-btn(color="indigo" @click="clear_list_of_rectangles()" v-on="on") Clear (c)
+              v-btn(color="indigo" @click="$refs.drawingArea.clear()" v-on="on") Clear (c)
             span Press c instead of clicking here
           
         v-list-tile
-          v-btn(color="indigo" :disabled="!previous_image.src" v-if="!work_on_previous" @click="go_to_previous_image()") Previous (a)
-          v-btn(color="indigo" v-if="work_on_previous" @click="go_to_next_image()") Next (n)
+          v-btn(color="indigo" :disabled="!previousImage.src" v-if="!workOnPrevious" @click="goToPreviousImage()") Previous (a)
+          v-btn(color="indigo" v-if="workOnPrevious" @click="goToNextImage()") Next (n)
         v-divider
 
         v-list-tile
           v-flex(xs12)
-            v-slider(v-model="gui.slider" label="Radius" thumb-label min=6 max=20)
+            v-slider(v-model="gui.radius" label="Radius" thumb-label min=6 max=20)
+
+        v-list-tile
+          v-flex(xs12)
+            v-select(:items="classNames" label="Class" v-model="selectedClassName")
         
     v-content
-      v-alert(:value="true" type="info" dismissible) If you want to edit you last image, press a, edit the image and press s to re-send data {{gui.slider}}
+      //- v-alert(:value="true" type="info" dismissible) If you want to edit you last image, press a, edit the image and press s to re-send data {{selectedClassName}}
       v-container(grid-list-md fluid)
         v-layout(justify-space-around align-space-around)
           v-flex(xs10)
             rectangle(:href="image.src" :width="image.width" :height="image.height" 
-                      drawable=true class_name="rectangles" ref="drawing_area" :radius="gui.slider")
+                      drawable=true id="rectangles" 
+                      :selectedClassName="selectedClassName" :radius="gui.radius"
+                      :classNamesList="classNames" ref="drawingArea")
 
     v-footer(app)
       span(class="px-3") &copy; Sébastien IOOSS {{ new Date().getFullYear() }}
@@ -55,159 +61,146 @@ export default {
   methods: {
     send() {
       let vm = this;
-      vm.update_list_of_rectangles();
+      let detectedObjects = vm.$refs.drawingArea.detectedObjects();
+      console.log(detectedObjects);
       axios
-        .post("/set_image", {
-          rectangles: this.rectangles,
-          image_src: this.image.src
+        .post(vm.serverUrl + "/set_image", {
+          detectedObjects: detectedObjects,
+          imageSrc: this.image.src
         })
         .then(function(response) {
-          console.log(response);
+          if (!vm.workOnPrevious) {
+            // save data in previous image
+            vm.previousImage.detectedObjects = detectedObjects;
+            vm.previousImage.src = vm.image.src;
+            vm.$refs.drawingArea.clear();
+            vm.getImage();
+            vm.nImagesDoneByUser++;
+          } else {
+            vm.workOnPrevious = false;
+            vm.goToNextImage();
+          }
         });
-
-      if (!this.work_on_previous) {
-        // save data in previous image
-        this.previous_image.rectangles = this.rectangles;
-        this.previous_image.src = this.image.src;
-        this.clear_list_of_rectangles();
-        this.get_image_caller();
-        this.n_images_done_by_user++;
-      } else {
-        this.work_on_previous = false;
-        this.go_to_next_image();
-      }
     },
 
-    update_list_of_rectangles() {
+    getImage() {
       let vm = this;
-      let element = document.getElementsByClassName("rectangles");
-      let polylines = element[0].getElementsByTagName("polyline");
-
-      let points = [];
-      for (let polyline of polylines) {
-        points.push({
-          xMin: polyline.animatedPoints[0].x,
-          yMin: polyline.animatedPoints[0].y,
-          xMax: polyline.animatedPoints[2].x,
-          yMax: polyline.animatedPoints[2].y
-        });
-      }
-      this.rectangles = points;
-    },
-
-    get_image_caller() {
-      let vm = this;
-      axios.get("/get_image").then(function(response) {
+      axios.get(vm.serverUrl + "/get_image").then(function(response) {
         // handle success
-        vm.image.src = "/" + response["data"]["image_path"];
+        vm.image.src = vm.imageUrl + "/" + response["data"]["image_path"];
         vm.image.width = response["data"]["width"] + "px";
         vm.image.height = response["data"]["height"] + "px";
-        vm.gui.image_id = response["data"]["image_id"];
-        vm.gui.n_images = response["data"]["n_images"];
+        vm.gui.nImagesDoneByTeam = response["data"]["image_id"];
+        vm.gui.nImagesToDoByTeam = response["data"]["n_images"];
 
         // parse data
-        if (response["data"]["data"] !== {}) {
-          console.log(response["data"]["data"]);
-          vm.$refs.drawing_area.load_data(
-            response["data"]["data"]["rectangles"]
-          );
+        if ("rectangles" in response["data"]["data"]) {
+          vm.$refs.drawingArea.loadData(response["data"]["data"]["rectangles"]);
         }
       });
     },
 
-    clear_list_of_rectangles() {
-      let element = document.getElementsByClassName("rectangles");
-      let circles = element[0].getElementsByTagName("circle");
-      while (circles.length !== 0) {
-        circles[0].parentNode.removeChild(circles[0]);
-      }
-      let polylines = element[0].getElementsByTagName("polyline");
-      while (polylines.length !== 0) {
-        polylines[0].parentNode.removeChild(polylines[0]);
-      }
+    getClassNames() {
+      let vm = this;
+      axios.get(vm.serverUrl + "/get_classes").then(function(response) {
+        vm.classNames = response["data"]["classNames"];
+        console.log(vm.classNames)
+        if (vm.classNames.length > 0) {
+          vm.selectedClassName = vm.classNames[0];
+        }
+        console.log(response["data"])
+        let classColors = response["data"]["classColors"];
+        console.log(classColors)
 
-      this.rectangles = [];
+        if (classColors.length == vm.classNames.length)
+          vm.$refs.drawingArea.colorMap = classColors;
+      });
     },
-
-    go_to_previous_image() {
-      this.update_list_of_rectangles();
+    goToPreviousImage() {
       // save in next image
-      this.next_image.rectangles = this.rectangles;
-      this.next_image.src = this.image.src;
+      console.log("save current image in next image");
+      console.log(this.$refs.drawingArea.detectedObjects());
+      this.nextImage.detectedObjects = this.$refs.drawingArea.detectedObjects();
+      console.log(this.nextImage.detectedObjects);
+      this.nextImage.src = this.image.src;
 
       // load data of previous image
-      this.image.src = this.previous_image.src;
-      this.rectangles = this.previous_image.rectangles;
-
-      // draw the rectangles of the previous image
-      this.$refs.drawing_area.clear();
-      this.$refs.drawing_area.load_data(this.rectangles);
-      this.work_on_previous = true;
+      this.image.src = this.previousImage.src;
+      this.$refs.drawingArea.clear();
+      this.$refs.drawingArea.loadData(this.previousImage.detectedObjects);
+      this.workOnPrevious = true;
     },
-    go_to_next_image() {
-      this.update_list_of_rectangles();
+    goToNextImage() {
       // save in previous image
-      this.previous_image.rectangles = this.rectangles;
-      this.previous_image.src = this.image.src;
+      this.previousImage.detectedObjects = this.$refs.drawingArea.detectedObjects();
+      this.previousImage.src = this.image.src;
 
       // load data of next image
-      this.image.src = this.next_image.src;
-      this.rectangles = this.next_image.rectangles;
-
-      // draw the rectangles of the previous image
-      this.$refs.drawing_area.clear();
-      this.$refs.drawing_area.load_data(this.rectangles);
-      this.work_on_previous = false;
+      this.image.src = this.nextImage.src;
+      this.$refs.drawingArea.clear();
+      this.$refs.drawingArea.loadData(this.nextImage.detectedObjects);
+      this.workOnPrevious = false;
     }
   },
   data() {
     return {
       gui: {
-        nav_drawer_visible: true,
-        image_id: 0,
-        n_images: 0,
-        slider: 6
+        navDrawerVisible: true, // control if the lateral menu is visible
+        nImagesDoneByTeam: 0, // updated each time we get a new image from python server
+        nImagesToDoByTeam: 0, // updated each time we get a new image from python server
+        radius: 6 // radius of the circles to draw
       },
       image: {
-        src: "https://picsum.photos/200/300",
-        width: "200px",
-        height: "300px"
+        src: "https://picsum.photos/200/300", // path of the image
+        width: "200px", // value send by the python server at the same time than the image
+        height: "300px" // value send by the python server at the same time than the image
       },
-      previous_image: {
-        rectangles: [],
+      previousImage: {
+        detectedObjects: [],
         src: null
       },
-      // only usefull when go to previous
-      next_image: {
-        rectangles: [],
-        src: []
+      // only useful when go to previous
+      nextImage: {
+        detectedObjects: [],
+        src: null
       },
-      work_on_previous: false,
-
-      rectangles: [],
-      n_images_done_by_user: 0
+      workOnPrevious: false,
+      nImagesDoneByUser: 0,
+      // serverUrl: "http://127.0.0.1:5000",
+      // imageUrl: "http://127.0.0.1:5000",
+      serverUrl: "",
+      imageUrl: "",
+      classNames: [],
+      selectedClassName: ""
     };
   },
   mounted() {
     let vm = this;
-    vm.get_image_caller();
+    vm.getImage();
+    vm.getClassNames();
 
     document.addEventListener(
       "keydown",
       event => {
         const keyName = event.key;
-        console.log(keyName);
+        console.log(keyName)
         if (keyName == "s") {
           vm.send();
         }
         if (keyName == "c") {
-          vm.clear_list_of_rectangles();
+          vm.$refs.drawingArea.clear();
         }
         if (keyName == "a") {
-          vm.go_to_previous_image();
+          vm.goToPreviousImage();
         }
         if (keyName == "n") {
-          vm.go_to_next_image();
+          vm.goToNextImage();
+        }
+        if (keyName == "x" || keyName == "Tab") {
+          let id = vm.classNames.findIndex(x => x == vm.selectedClassName);
+          id++;
+          if (id >= vm.classNames.length) id = 0;
+          vm.selectedClassName = vm.classNames[id];
         }
       },
       false

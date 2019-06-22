@@ -1,6 +1,6 @@
 <template>
-  <svg :class="class_name" :width="width" :height="height">
-    <image :id="image_id" :href="href" x="0" y="0" :height="height" :width="width"></image>
+  <svg :id="id" :width="width" :height="height">
+    <image :id="imageId" :href="href" x="0" y="0" :height="height" :width="width"></image>
   </svg>
 </template>
 
@@ -9,26 +9,61 @@ const d3 = require("d3");
 export default {
   name: "points",
   props: {
-    class_name: String,
-    href: String, // href of the image showing in the svg
-    drawable: Boolean, // if true then update the points linked to drawable_name
+    // SVG parameters
+    id: String, // Should be unique in the whole document
     height: String,
     width: String,
+
+    // Image parameters
+    href: String, // href of the image showing in the svg
+
+    // Drawing parameters
+    selectedClassName: String, // name of the detected object
+    classNamesList: Array,
+    drawable: Boolean, // if true then update the points linked to drawable_name
     radius: Number
   },
   data() {
     return {
-      selected_group: null // the last d3 group created or selected
+      selectedGroup: null, // the last d3 group created or selected
+      colorMap: ["#ff0000", "#00e9ff", "#1aff00", "#0018ff", "#ff8a00"]
     };
   },
   watch: {},
   computed: {
-    image_id: function() {
-      return this.class_name + "_image";
-    }
+    imageId: function() {
+      return this.id + "_image";
+    },
+    color: function() {
+      let id = this.classNamesList.findIndex(x => x == this.selectedClassName);
+      return this.colorMap[id];
+    },
   },
   methods: {
-    add_point(group, x, y) {
+    detectedObjects() {
+      let groups = d3
+        .select("#" + this.id)
+        .select("g")
+        .selectAll("g");
+      let detectedObj = [];
+      groups.each(function(d) {
+        let selection = d3.select(this);
+        let points = selection
+          .select("polyline")
+          .attr("points")
+          .split(",");
+
+        detectedObj.push({
+          class: String(selection.attr("class")),
+          xMin: parseInt(points[0]),
+          yMin: parseInt(points[1]),
+          xMax: parseInt(points[4]),
+          yMax: parseInt(points[5])
+        });
+      });
+      return detectedObj;
+    },
+    addPoint(group, x, y) {
       let vm = this;
       function handleDrag() {
         // move the point
@@ -36,7 +71,7 @@ export default {
           .attr("cx", d3.event.x)
           .attr("cy", d3.event.y);
 
-        // find coordinates of the second point
+        // find coordinates of the 2 points to draw the polyline
         let circles = d3.select(this.parentNode).selectAll("circle");
         let newPoints = [];
         for (let circle of circles._groups[0]) {
@@ -48,22 +83,16 @@ export default {
         d3.select(this.parentNode)
           .selectAll("polyline")
           .remove();
-        vm.add_rectangle(
-          d3.select(this.parentNode),
-          newPoints[0],
-          newPoints[1]
-        );
+        vm.addRectangle(d3.select(this.parentNode), newPoints[0], newPoints[1]);
       }
       function handleClick() {
-        console.log("click");
-        vm.selected_group = d3.select(this.parentNode);
+        vm.selectedGroup = d3.select(this.parentNode);
       }
       group
         .append("circle")
         .attr("cx", x)
         .attr("cy", y)
         .attr("r", vm.radius)
-        .attr("fill", "yellow")
         .attr("opacity", "0.3")
         .attr("stroke", "#000")
         .attr("is-handle", "true")
@@ -72,36 +101,38 @@ export default {
         .call(d3.drag().on("drag", handleDrag));
     },
 
-    add_rectangle(group, p1, p2) {
-      let x_min = Math.min(p1[0], p2[0]);
-      let x_max = Math.max(p1[0], p2[0]);
-      let y_min = Math.min(p1[1], p2[1]);
-      let y_max = Math.max(p1[1], p2[1]);
+    addRectangle(group, p1, p2) {
+      let xMin = Math.min(p1[0], p2[0]);
+      let xMax = Math.max(p1[0], p2[0]);
+      let yMin = Math.min(p1[1], p2[1]);
+      let yMax = Math.max(p1[1], p2[1]);
 
       let rectPoints = [
-        [x_min, y_min],
-        [x_min, y_max],
-        [x_max, y_max],
-        [x_max, y_min],
-        [x_min, y_min]
+        [xMin, yMin],
+        [xMin, yMax],
+        [xMax, yMax],
+        [xMax, yMin],
+        [xMin, yMin]
       ];
 
       group
         .insert("polyline", ":first-child")
         .attr("points", rectPoints)
-        .style("fill", "none")
-        .attr("stroke", "yellow");
+        .style("fill", "none");
     },
 
-    load_data(data) {
-      let svg = d3.select("svg." + this.class_name);
-      let g = svg.select("g");
+    loadData(data) {
+      let g = d3.select("#" + this.id).select("g");
 
       for (let rectangle of data) {
-        let newGroup = g.append("g");
-        this.add_point(newGroup, rectangle["xMin"], rectangle["yMin"]);
-        this.add_point(newGroup, rectangle["xMax"], rectangle["yMax"]);
-        this.add_rectangle(
+        let newGroup = g
+          .append("g")
+          .attr("class", rectangle["class"])
+          .attr("stroke", this.colorMap[this.classNamesList.findIndex(x => x == rectangle["class"])])
+          .attr("fill", this.colorMap[this.classNamesList.findIndex(x => x == rectangle["class"])])
+        this.addPoint(newGroup, rectangle["xMin"], rectangle["yMin"]);
+        this.addPoint(newGroup, rectangle["xMax"], rectangle["yMax"]);
+        this.addRectangle(
           newGroup,
           [rectangle["xMin"], rectangle["yMin"]],
           [rectangle["xMax"], rectangle["yMax"]]
@@ -110,14 +141,14 @@ export default {
     },
 
     clear() {
-      let svg = d3.select("svg." + this.class_name);
+      let svg = d3.select("#" + this.id);
       let g = svg.select("g");
       g.selectAll("g").remove();
     }
   },
   mounted() {
     let vm = this; // Vue instance
-    let svg = d3.select("svg." + vm.class_name);
+    let svg = d3.select("#" + vm.id);
     let g = svg.append("g");
     // document structure : svg has one group g which have many sub-group sg with one rectangle per sub-group
 
@@ -125,32 +156,37 @@ export default {
     let newGroup = null; // when drawing a rectangle, need to remember the group of the first point we clicked
     let firstPoint = null;
 
+    // TODO implement zoom
     // svg.call(
     // d3.zoom().on("zoom", function() {
     // svg.attr("transform", d3.event.transform);
     // })
     // );
 
-    svg.on("mouseup", function() {
+    svg.on("mousedown", function() {
       if (!isDrawing) {
-        newGroup = g.append("g");
+        newGroup = g
+          .append("g")
+          .attr("class", vm.selectedClassName)
+          .attr("stroke", vm.color)
+          .attr("fill", vm.color);
         firstPoint = [d3.mouse(this)[0], d3.mouse(this)[1]];
-        vm.add_point(newGroup, firstPoint[0], firstPoint[1]);
+        vm.addPoint(newGroup, firstPoint[0], firstPoint[1]);
         isDrawing = true;
       } else {
         let lastPoint = [d3.mouse(this)[0], d3.mouse(this)[1]];
-        vm.add_point(newGroup, lastPoint[0], lastPoint[1]);
+        vm.addPoint(newGroup, lastPoint[0], lastPoint[1]);
         isDrawing = false;
         newGroup.select("polyline").remove();
-        vm.add_rectangle(newGroup, lastPoint, firstPoint);
-        vm.selected_group = newGroup;
+        vm.addRectangle(newGroup, lastPoint, firstPoint);
+        vm.selectedGroup = newGroup;
       }
     });
 
     svg.on("mousemove", function() {
       if (!isDrawing) return;
       newGroup.select("polyline").remove();
-      vm.add_rectangle(newGroup, firstPoint, [
+      vm.addRectangle(newGroup, firstPoint, [
         d3.mouse(this)[0],
         d3.mouse(this)[1]
       ]);
@@ -160,14 +196,13 @@ export default {
       "keydown",
       event => {
         const keyName = event.key;
-        console.log(keyName);
         if (keyName == "Escape") {
           // Cancel drawing
           if (isDrawing) {
             isDrawing = false;
             newGroup.remove();
           } else {
-            vm.selected_group.remove();
+            vm.selectedGroup.remove();
           }
         }
       },
@@ -175,7 +210,7 @@ export default {
     );
 
     // be sure the image is not draggable
-    document.getElementById(vm.image_id).ondragstart = function() {
+    document.getElementById(vm.imageId).ondragstart = function() {
       return false;
     };
   }

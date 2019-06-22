@@ -12,9 +12,6 @@ RUN     yarn && yarn build
 
 FROM    python:3.7
 WORKDIR /opt
-CMD     python3 app.py --images_path static/images \
-                       --human_annotations_path static/human_annotations \
-                       --model_annotations_path static/model_annotations
-RUN     pip3 install coloredlogs flask absl-py Pillow
+RUN     pip3 install coloredlogs flask absl-py Pillow flask_cors
 COPY    --from=builder /opt/static static
 COPY    app.py app.py

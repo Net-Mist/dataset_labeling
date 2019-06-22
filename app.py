@@ -6,18 +6,21 @@ import coloredlogs
 from PIL import Image
 
 from flask import Flask, url_for, redirect, Response, jsonify
+from flask_cors import CORS
+
 import flask
 from absl import flags
 from absl import app as absl_app
 
 coloredlogs.install(level='DEBUG')
 
-flags.DEFINE_string("images_path", None, "Path where are stored the images to annotate")
-flags.DEFINE_string("human_annotations_path", None, "Path where are stored human annotation")
-flags.DEFINE_string("model_annotations_path", None, "Path where are stored model annotation for helping human")
+flags.DEFINE_string("images_path", "static/images", "Path where are stored the images to annotate")
+flags.DEFINE_string("human_annotations_path", "static/human_annotations", "Path where are stored human annotation")
+flags.DEFINE_string("model_annotations_path", "static/model_annotations", "Path where are stored model annotation for helping human")
+flags.DEFINE_list("class_names", None, "name of the classes to annotate")
+flags.DEFINE_list("class_colors", [], "colors for each classes")
 
-flags.mark_flag_as_required('images_path')
-flags.mark_flag_as_required('human_annotations_path')
+flags.mark_flag_as_required('class_names')
 
 FLAGS = flags.FLAGS
 
@@ -89,7 +92,7 @@ class ImageProvider:
 
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route("/")
 def index():
@@ -108,13 +111,20 @@ def set_image():
     message = flask.request.get_json()
     logging.info(message)
 
-    json_name = os.path.splitext(os.path.split(message['image_src'])[1])[0] + ".json"
+    for shape in message["detectedObjects"]:
+        assert shape["class"] in FLAGS.class_names
+
+    json_name = os.path.splitext(os.path.split(message['imageSrc'])[1])[0] + ".json"
 
     with open(os.path.join(FLAGS.human_annotations_path, json_name), 'w') as outfile:
-        json.dump({"rectangles": message["rectangles"]}, outfile)
+        json.dump({"rectangles": message["detectedObjects"]}, outfile)
 
     return "ok"
 
+@app.route("/get_classes")
+def get_classes():
+    logging.info(FLAGS.class_names) 
+    return jsonify({"classNames": FLAGS.class_names, "classColors": FLAGS.class_colors})
 
 def main(argv):
     global image_provider

@@ -2,7 +2,7 @@ version: "2.3"
 
 services:
   web:
-    image: net-mist/dataset_labeling:0.4
+    image: net-mist/dataset_labeling:0.5
     build: .
     volumes:
       - ${IMAGES_PATH}:/opt/static/images
@@ -11,4 +11,4 @@ services:
     ports:
       - 5000:5000
     user: 1000:1000
-      
+    command: python3 app.py --class_names=${CLASS_NAME} --class_colors=${CLASS_COLORS}
