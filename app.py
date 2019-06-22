@@ -64,6 +64,7 @@ class ImageProvider:
                 new_list.append(image_name)
         self.images_list = new_list
         logging.info(f"there are {len(self.images_list)} images to annotate")
+        self.images_list.sort()
         self.n_images = len(self.images_list)
 
     def get_image(self):
