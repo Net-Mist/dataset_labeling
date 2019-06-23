@@ -132,7 +132,7 @@ def main(argv):
     image_provider = ImageProvider()
 
     # Write txt file containing class info
-    with open(os.path.join(FLAGS.human_annotations_path, "class_name.txt"), "w") as f:
+    with open(os.path.join(FLAGS.human_annotations_path, "class_names.txt"), "w") as f:
         f.write(','.join(FLAGS.class_names))
 
 

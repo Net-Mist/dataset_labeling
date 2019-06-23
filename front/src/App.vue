@@ -5,8 +5,7 @@
       v-toolbar-title Dataset labeling
       //- v-spacer
       v-toolbar-title(class="body-2 grey--text") team : {{gui.nImagesDoneByTeam}} / {{gui.nImagesToDoByTeam}}, user : {{nImagesDoneByUser}}
-
-
+      
     v-navigation-drawer(v-model="gui.navDrawerVisible" absolute overflow app clipped)
       v-list        
         v-list-tile

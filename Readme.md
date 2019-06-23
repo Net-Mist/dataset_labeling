@@ -24,7 +24,7 @@ export CLASS_COLORS=#e5ff00,#ff0000,#ff7f00,#000000
 docker-compose up 
 ```
 
-Please note than a file "class_name.txt" will be created in MODEL_ANNOTATIONS_PATH with the list of the cass names. This file is useful for the next step : 
+Please note than a file "class_names.txt" will be created in MODEL_ANNOTATIONS_PATH with the list of the cass names. This file is useful for the next step : 
 generating the tfrecord files
 
 ## Start the annotation service without docker
