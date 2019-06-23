@@ -11,4 +11,4 @@ services:
     ports:
       - 5000:5000
     user: 1000:1000
-    command: python3 app.py --class_names=${CLASS_NAME} --class_colors=${CLASS_COLORS}
+    command: python3 app.py --class_names=${CLASS_NAMES} --class_colors=${CLASS_COLORS}

@@ -130,6 +130,12 @@ def get_classes():
 def main(argv):
     global image_provider
     image_provider = ImageProvider()
+
+    # Write txt file containing class info
+    with open(os.path.join(FLAGS.human_annotations_path, "class_name.txt"), "w") as f:
+        f.write(','.join(FLAGS.class_names))
+
+
     app.run(host='0.0.0.0', threaded=True)
 
 
