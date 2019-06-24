@@ -70,6 +70,7 @@ class ImageProvider:
     def get_image(self):
         with self.lock:
             image = self.images_list[self.current_image]
+            image_id = self.current_image
             self.current_image += 1
 
         image_path = os.path.join(self.images_path, image)
@@ -88,7 +89,7 @@ class ImageProvider:
                         "data": data, 
                         "width": width, 
                         "height": height,
-                        "image_id": self.current_image,
+                        "image_id": image_id,
                         "n_images": self.n_images})
 
 
