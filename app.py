@@ -68,8 +68,18 @@ class ImageProvider:
         self.n_images = len(self.images_list)
 
     def get_image(self):
+        if self.current_image >= self.n_images: # all images done
+            return jsonify({
+                "image_path": "static/all-done__pang-yuhao-1133167-unsplash_light.jpg",
+                "data": {},
+                "width": 1224,
+                "height": 816,
+                "image_id": "All done!",
+                "n_images": self.n_images})
+
         with self.lock:
             image = self.images_list[self.current_image]
+            image_id = self.current_image
             self.current_image += 1
 
         image_path = os.path.join(self.images_path, image)
@@ -88,7 +98,7 @@ class ImageProvider:
                         "data": data, 
                         "width": width, 
                         "height": height,
-                        "image_id": self.current_image,
+                        "image_id": image_id,
                         "n_images": self.n_images})
 
 

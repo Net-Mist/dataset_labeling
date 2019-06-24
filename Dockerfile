@@ -1,5 +1,4 @@
 FROM    node:8.16.0-jessie AS builder
-
 WORKDIR /opt/front
 RUN     apt-get update && \
             apt-get install apt-transport-https && \
