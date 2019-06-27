@@ -115,9 +115,15 @@ export default {
         [xMin, yMin]
       ];
 
+      let color = "#ff0000"
+      if (yMax - yMin > 60){
+        color = "#00ff00"
+      }
+
       group
         .insert("polyline", ":first-child")
         .attr("points", rectPoints)
+        .attr("stroke", color)
         .style("fill", "none");
     },
 
