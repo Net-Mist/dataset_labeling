@@ -1,14 +1,14 @@
 version: "2.3"
 
 services:
-  web:
+  web_check:
     image: net-mist/dataset_labeling:0.5
     build: .
     volumes:
       - ${IMAGES_PATH}:/opt/static/images
-      - ${HUMAN_ANNOTATIONS_PATH}:/opt/static/human_annotations
-      - ${MODEL_ANNOTATIONS_PATH}:/opt/static/model_annotations
+      - ${HUMAN_ANNOTATIONS_PATH}:/opt/static/human_annotations # empty
+      - ${MODEL_ANNOTATIONS_PATH}:/opt/static/model_annotations # put human annotations here
     ports:
-      - 5000:5000
+      - 5001:5000
     user: 1000:1000
     command: python3 app.py --class_names=${CLASS_NAMES} --class_colors=${CLASS_COLORS}

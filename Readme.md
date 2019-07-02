@@ -21,7 +21,7 @@ mkdir -p $HUMAN_ANNOTATIONS_PATH # otherwise it would be created by docker/root 
 docker-compose up
 ```
 
-You may define those env variable in the file `.env`, which is read by docker-compose.
+You may define those env variable in the file `.env`, which is read by docker-compose. See `sample.env` for an example.
 
 Please note that a file "class_names.txt" will be created in MODEL_ANNOTATIONS_PATH with the list of the class names. This file is useful for the next step: generating the tfrecord files.
 
@@ -35,6 +35,15 @@ python3 app.py --images_path= \
 ```
 
 the images need to be in the `static/` folder to be served with flask
+
+## Check the annotations
+The annotation server can be hacked to check the annotations:
+- copy the human annotations to the model preannotations folder
+- launch a new server (different name and port) with docker-compose_check-annotation.yml .
+
+
+## Optional: preannotate images with a frozen model
+Run `tools/machine_annotation.py` . This script can be run from a docker container built with `tools/machine_annotation.dockerfile` .
 
 ## Contributing: code architecture
 - app.py contains the Flask backend code
