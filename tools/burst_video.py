@@ -20,6 +20,9 @@ def main():
     if not video.isOpened():
         raise Exception(f"Cannot open video {args.path}")
     interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * args.extract_every / 1000)
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    logging.info(f'frame_count: {frame_count}')
+    frame_count_length = len(str(frame_count))
 
     while True:
         got_frame, img = video.read()
@@ -27,7 +30,7 @@ def main():
             logging.info('end of video')
             break
         if(frame_id - last_save > interval_between_pic):
-            picture_path = os.path.join(args.outputdir, f'{args.prefix}_{frame_id}.jpg')
+            picture_path = os.path.join(args.outputdir, f'{args.prefix}_{frame_id:0{frame_count_length}}.jpg')
             cv2.imwrite(picture_path, img)
             last_save = frame_id
             logging.info('Saving picture ' + picture_path)
