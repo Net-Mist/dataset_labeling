@@ -25,9 +25,9 @@ FLAGS = flags.FLAGS
 
 
 def main(argv):
-    os.makedirs(FLAGS.model_annotations_path, exist_ok=True)
-    images_list = os.listdir(FLAGS.images_path)
-    annotations_list = os.listdir(FLAGS.model_annotations_path)
+    os.makedirs(FLAGS.output_dir, exist_ok=True)
+    images_list = os.listdir(FLAGS.input_dir)
+    annotations_list = os.listdir(FLAGS.output_dir)
 
     # Only keep images that aren't processed yet
     new_list = []
@@ -59,7 +59,7 @@ def main(argv):
         # Run inference
         first_iter = True
         for image_id in tqdm(range(len(images_list))):
-            image = cv2.cvtColor(cv2.imread(os.path.join(FLAGS.images_path, images_list[image_id])), cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(cv2.imread(os.path.join(FLAGS.input_dir, images_list[image_id])), cv2.COLOR_BGR2RGB)
 
             if first_iter:
                 print(image.shape)
@@ -70,20 +70,21 @@ def main(argv):
 
             good_rectangles = []
             for i, detection_score in enumerate(output_dict["detection_scores"][0]):
-                if detection_score > 0.4:
+                if detection_score > 0.2:
                     box = output_dict["detection_boxes"][0][i]  # ymin, xmin, ymax, xmax
                     if output_dict["detection_classes"][0][i] == 1 \
-                       and box[3]-box[1] < 0.5  and  box[2]-box[0] <0.5 :
+                       and box[3]-box[1] < 0.7 : # very large detections are mostly false positives
                         good_rectangles.append({"xMin": int(box[1] * width),
                                                 "yMin": int(box[0] * height),
                                                 "xMax": int(box[3] * width),
                                                 "yMax": int(box[2] * height),
+                                                "detection_score": detection_score.item(),
                                                 "class":"person"})
                 else:
                     break
 
             json_name = os.path.splitext(images_list[image_id])[0] + ".json"
-            with open(os.path.join(FLAGS.model_annotations_path, json_name), 'w') as outfile:
+            with open(os.path.join(FLAGS.output_dir, json_name), 'w') as outfile:
                 json.dump({"rectangles": good_rectangles}, outfile)
 
 
