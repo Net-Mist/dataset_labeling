@@ -18,7 +18,7 @@ def main():
     last_save = -10000
     video = cv2.VideoCapture(args.file)
     if not video.isOpened():
-        raise Exception(f"Cannot open video {args.path}")
+        raise Exception(f"Cannot open video {args.file}")
     interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * args.extract_every / 1000)
 
     while True:
