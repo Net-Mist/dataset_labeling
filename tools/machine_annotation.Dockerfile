@@ -7,10 +7,8 @@ RUN     apt update && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*
 # libsm6 libxrandr2 libxext6 are for cv2
-RUN     pip install matplotlib opencv-python pandas absl-py tqdm coloredlogs
+RUN     pip install opencv-python pandas absl-py tqdm coloredlogs
 
 ENV PYTHONPATH $PYTHONPATH:/opt/models/research:/opt/models/research/slim
 
 WORKDIR /opt/workspace
-CMD     python app.py
-

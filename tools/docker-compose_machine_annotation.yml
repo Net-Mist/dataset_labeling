@@ -1,0 +1,14 @@
+version: "2.3"
+
+services:
+  prelabel:
+    image: prelabel
+    build:
+      context: .
+      dockerfile: machine_annotation.Dockerfile
+    volumes:
+      - .:/opt/workspace
+      - ${INPUT_DIR}:/opt/static/images
+      - ${OUTPUT_DIR}:/opt/static/model_annotations # put human annotations here
+    user: 1000:1000
+    command:  python machine_annotation.py --input_dir /opt/static/images/ --output_dir /opt/static/model_annotations/ --model_path /opt/workspace/frozen_inference_graph.pb
