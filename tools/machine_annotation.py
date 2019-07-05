@@ -37,6 +37,7 @@ def main(argv):
         if image_id not in annotation_ids:
             new_list.append(image_name)
     images_list = new_list
+    images_list.sort()
     logging.info("there are {} images to annotate".format(len(images_list)))
 
     # load tensorflow model (must be a frozen model)
