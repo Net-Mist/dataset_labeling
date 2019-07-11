@@ -1,14 +1,19 @@
-import cv2, logging, os
-from argparse import ArgumentParser
+import cv2
+import logging
+import os
+import coloredlogs
+from distribute_config import Config
 
-parser = ArgumentParser(description='Extract pictures from a video.')
-parser.add_argument('--file', required=True, help='input file: video to read and split')
-parser.add_argument('--extract_every', type=float, default=1000, help='Time in ms between two extracted images')
-parser.add_argument('--prefix', type=str, default=None, help='prefix to the name of the images')
-parser.add_argument('--outputdir', type=str, default='.', help='where to save the pictures')
+coloredlogs.install(level="DEBUG")
+
+Config.define_str("file", "", "input file: video to read and split")
+Config.define_float("extract_every", 100, "Time in ms between two extracted images")
+Config.define_str("prefix", None, "Prefix to the name of the images")
+Config.define_str("outputdir", ".", "Where to save the pictures")
+
 
 def main():
-    args = parser.parse_args()
+    Config.load_conf()
 
     if(args.prefix is None):
         args.prefix = get_prefix(args.file)
@@ -36,12 +41,12 @@ def main():
             logging.info('Saving picture ' + picture_path)
         frame_id += 1
 
+
 def get_prefix(file):
     basename = os.path.basename(file)
-    result,_ = os.path.splitext(basename)
+    result, _ = os.path.splitext(basename)
     return result
 
+
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format='%(asctime)s : %(message)s', datefmt='%m/%d/%Y %I:%M:%S')
     main()
