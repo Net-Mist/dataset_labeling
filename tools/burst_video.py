@@ -14,17 +14,22 @@ Config.define_str("outputdir", ".", "Where to save the pictures")
 
 def main():
     Config.load_conf()
+    config = Config.get_dict()
 
-    if(args.prefix is None):
-        args.prefix = get_prefix(args.file)
-        logging.info(f'prefix: {args.prefix}')
+    # check if the script can run
+    assert os.path.isfile(config["file"]), f"Option 'file' need to be provided"
+
+
+    if(config["prefix"] is None):
+        config["prefix"] = get_prefix(config["file"])
+        logging.info(f'prefix: {config["prefix"]}')
 
     frame_id = 0
     last_save = -10000
-    video = cv2.VideoCapture(args.file)
+    video = cv2.VideoCapture(config["file"])
     if not video.isOpened():
-        raise Exception(f"Cannot open video {args.file}")
-    interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * args.extract_every / 1000)
+        raise Exception(f"Cannot open video {config["file"]}")
+    interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * config["extract_every"] / 1000)
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     logging.info(f'frame_count: {frame_count}')
     frame_count_length = len(str(frame_count))
