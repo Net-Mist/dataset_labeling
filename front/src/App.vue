@@ -99,22 +99,6 @@ export default {
       });
     },
 
-    getClassNames() {
-      let vm = this;
-      axios.get(vm.serverUrl + "/get_classes").then(function(response) {
-        vm.classNames = response["data"]["classNames"];
-        console.log(vm.classNames)
-        if (vm.classNames.length > 0) {
-          vm.selectedClassName = vm.classNames[0];
-        }
-        console.log(response["data"])
-        let classColors = response["data"]["classColors"];
-        console.log(classColors)
-
-        if (classColors.length == vm.classNames.length)
-          vm.$refs.drawingArea.colorMap = classColors;
-      });
-    },
     goToPreviousImage() {
       // save in next image
       console.log("save current image in next image");
@@ -175,14 +159,26 @@ export default {
   },
   mounted() {
     let vm = this;
-    vm.getImage();
-    vm.getClassNames();
+    axios.get(vm.serverUrl + "/get_conf").then(function(response) {
+      vm.classNames = response["data"]["classNames"];
+      if (vm.classNames.length > 0) {
+        vm.selectedClassName = vm.classNames[0];
+      }
+      let classColors = response["data"]["classColors"];
+      if (classColors.length == vm.classNames.length)
+        vm.$refs.drawingArea.colorMap = classColors;
+      vm.$refs.drawingArea.minHeight = response["data"]["minHeight"];
+      vm.$refs.drawingArea.minWidth = response["data"]["minWidth"];
+
+      // We can query the first image after the config is fully loaded
+      vm.getImage();
+    });
 
     document.addEventListener(
       "keydown",
       event => {
         const keyName = event.key;
-        console.log(keyName)
+        // console.log(keyName)
         if (keyName == "s") {
           vm.send();
         }

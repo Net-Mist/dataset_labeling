@@ -1,6 +1,6 @@
 <template>
   <svg :id="id" :width="width" :height="height">
-    <image :id="imageId" :href="href" x="0" y="0" :height="height" :width="width"></image>
+    <image :id="imageId" :href="href" x="0" y="0" :height="height" :width="width" />
   </svg>
 </template>
 
@@ -26,7 +26,9 @@ export default {
   data() {
     return {
       selectedGroup: null, // the last d3 group created or selected
-      colorMap: ["#ff0000", "#00e9ff", "#1aff00", "#0018ff", "#ff8a00"]
+      colorMap: ["#ff0000", "#00e9ff", "#1aff00", "#0018ff", "#ff8a00"], // the color of the classes
+      minHeight: 0,
+      minWidth: 0
     };
   },
   watch: {},
@@ -37,9 +39,10 @@ export default {
     color: function() {
       let id = this.classNamesList.findIndex(x => x == this.selectedClassName);
       return this.colorMap[id];
-    },
+    }
   },
   methods: {
+    /** return a list of dict containing the class and the 4 coordinates of the rectangle */
     detectedObjects() {
       let groups = d3
         .select("#" + this.id)
@@ -115,10 +118,23 @@ export default {
         [xMin, yMin]
       ];
 
-      group
-        .insert("polyline", ":first-child")
-        .attr("points", rectPoints)
-        .style("fill", "none");
+      console.log(yMax - yMin)
+      console.log(xMax - xMin)
+      console.log(this.minHeight)
+      console.log(this.minWidth)
+      if (yMax - yMin < this.minHeight || xMax - xMin < this.minWidth) {
+        let color = "#ff0000";
+        group
+          .insert("polyline", ":first-child")
+          .attr("points", rectPoints)
+          .attr("stroke", color)
+          .style("fill", "none");
+      } else {
+        group
+          .insert("polyline", ":first-child")
+          .attr("points", rectPoints)
+          .style("fill", "none");
+      }
     },
 
     loadData(data) {
@@ -128,8 +144,18 @@ export default {
         let newGroup = g
           .append("g")
           .attr("class", rectangle["class"])
-          .attr("stroke", this.colorMap[this.classNamesList.findIndex(x => x == rectangle["class"])])
-          .attr("fill", this.colorMap[this.classNamesList.findIndex(x => x == rectangle["class"])])
+          .attr(
+            "stroke",
+            this.colorMap[
+              this.classNamesList.findIndex(x => x == rectangle["class"])
+            ]
+          )
+          .attr(
+            "fill",
+            this.colorMap[
+              this.classNamesList.findIndex(x => x == rectangle["class"])
+            ]
+          );
         this.addPoint(newGroup, rectangle["xMin"], rectangle["yMin"]);
         this.addPoint(newGroup, rectangle["xMax"], rectangle["yMax"]);
         this.addRectangle(

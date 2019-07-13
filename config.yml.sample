@@ -1,0 +1,16 @@
+class:
+  colors:
+  - '#e5ff00'
+  - '#ff0000'
+  - '#ff7f00'
+  - '#000000'
+  names:
+  - truck
+  - red
+  - orange
+  - black
+human_annotations_path: static/human_annotations
+images_path: static/images
+min_height: 60
+min_width: 30
+model_annotations_path: static/model_annotations
