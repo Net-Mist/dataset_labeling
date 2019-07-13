@@ -1,5 +1,9 @@
 # Dataset labeling
 
+## TODO
+-  Hide boxes
+- correct red box when some constraints are not respected 
+
 ## Start the annotation service using docker
 
 Specify the following environment variables:
@@ -43,7 +47,12 @@ The annotation server can be hacked to check the annotations:
 
 
 ## Optional: preannotate images with a frozen model
-Run `tools/machine_annotation.py` . This script can be run from a docker container built with `tools/machine_annotation.dockerfile` .
+Run `cd tools/machine_annotation &&  python3 app.py` . This script can be run from a docker container built with `tools/machine_annotation/(cpu/gpu)-Dockerfile` .
+
+## Optional : extract frame from a video
+Run `cd tools && python3 burst_video.py`
+
+To know the different options you can use, you can use the '--help' argument. You can provide these option using the command line, environment variables or by populate the `config_video_bust.yml` file created the first time you run the script
 
 ## Contributing: code architecture
 - app.py contains the Flask backend code

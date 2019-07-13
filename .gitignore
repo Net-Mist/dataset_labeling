@@ -3,3 +3,4 @@
 /assets/model_annotations/
 .env
 frozen_inference_graph.pb
+config*.yml

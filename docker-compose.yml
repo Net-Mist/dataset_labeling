@@ -2,7 +2,7 @@ version: "2.3"
 
 services:
   web:
-    image: net-mist/dataset_labeling:0.5
+    image: netmist/dataset_labeling:0.5
     build: .
     volumes:
       - ${IMAGES_PATH}:/opt/static/images
