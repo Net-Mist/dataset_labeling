@@ -11,4 +11,4 @@ services:
       - ${INPUT_DIR}:/opt/images
       - ${OUTPUT_DIR}:/opt/model_annotations # put human annotations here
     user: 1000:1000
-    command:  python machine_annotation.py --input_dir /opt/images/ --output_dir /opt/model_annotations/
+    command:  python app.py --input_dir /opt/images/ --output_dir /opt/model_annotations/

@@ -12,9 +12,9 @@ from distribute_config import Config
 
 coloredlogs.install(level="DEBUG")
 
-Config.define_str("model_path", None, "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
-Config.define_str("input_dir",  None, "Path where the images to annotate are stored")
-Config.define_str("output_dir", None, "Path to store pre-annotations (model annotations to help human annotators)")
+Config.define_str("model_path", "", "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
+Config.define_str("input_dir",  "", "Path where the images to annotate are stored")
+Config.define_str("output_dir", "", "Path to store pre-annotations (model annotations to help human annotators)")
 
 with Config.namespace("object_detection"):
     Config.define_float("threshold", 0.2, "Discard boxes with score below this value")
@@ -24,9 +24,9 @@ with Config.namespace("object_detection"):
 def main():
     Config.load_conf()
     config = Config.get_dict()
-    assert config["model_path"] is not None, "model_path can't be None"
-    assert config["input_dir"] is not None, "input_dir can't be None"
-    assert config["output_dir"] is not None, "output_dir can't be None"
+    assert config["model_path"] != "", "model_path can't be empty"
+    assert config["input_dir"] != "", "input_dir can't be empty"
+    assert config["output_dir"] != "", "output_dir can't be empty"
 
     os.makedirs(config["output_dir"], exist_ok=True)
     images_list = os.listdir(config["input_dir"])
