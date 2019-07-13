@@ -2,7 +2,6 @@
 
 ## TODO
 -  Hide boxes
-- correct red box when some constraints are not respected 
 
 ## Start the annotation service using docker
 
