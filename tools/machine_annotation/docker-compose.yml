@@ -10,5 +10,6 @@ services:
       - .:/opt/workspace
       - ${INPUT_DIR}:/opt/images
       - ${OUTPUT_DIR}:/opt/model_annotations # put human annotations here
+      - ${EXPERIMENT_DIR}:/opt/model
     user: 1000:1000
     command:  python app.py --input_dir /opt/images/ --output_dir /opt/model_annotations/
