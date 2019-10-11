@@ -15,7 +15,8 @@ coloredlogs.install(level="DEBUG")
 Config.define_str("model_path", "", "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
 Config.define_str("input_dir",  "", "Path where the images to annotate are stored")
 Config.define_str("output_dir", "", "Path to store pre-annotations (model annotations to help human annotators)")
-
+with Config.namespace("class"):
+    Config.define_str_list("names", [], "name of the classes to annotate")
 with Config.namespace("object_detection"):
     Config.define_float("threshold", 0.2, "Discard boxes with score below this value")
     Config.define_float("max_width", 0.7, "Discard boxes with width upper this value because in some cases, very large detections are mostly false positives")
@@ -76,14 +77,13 @@ def main():
             for i, detection_score in enumerate(output_dict["detection_scores"][0]):
                 if detection_score >= config["object_detection"]["threshold"]:
                     box = output_dict["detection_boxes"][0][i]  # ymin, xmin, ymax, xmax
-                    if output_dict["detection_classes"][0][i] == 1 \
-                       and box[3]-box[1] < config["object_detection"]["max_width"]:
+                    if box[3]-box[1] < config["object_detection"]["max_width"]:
                         good_rectangles.append({"xMin": int(box[1] * width),
                                                 "yMin": int(box[0] * height),
                                                 "xMax": int(box[3] * width),
                                                 "yMax": int(box[2] * height),
                                                 "detection_score": detection_score.item(),
-                                                "class": "person"})
+                                                "class": config["class"]["names"][int(output_dict["detection_classes"][0][i])-1]})
                 else:
                     break
 
