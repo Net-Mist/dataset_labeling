@@ -10,6 +10,7 @@ services:
       - .:/opt/workspace
       - ${INPUT_DIR}:/opt/images
       - ${OUTPUT_DIR}:/opt/model_annotations # put human annotations here
-      - ${EXPERIMENT_DIR}:/opt/model
+      - ${MODEL_PATH}:/opt/model/frozen_inference_graph.pb
     user: 1000:1000
-    command:  python app.py --input_dir /opt/images/ --output_dir /opt/model_annotations/ --model_path ${MODEL_PATH}
+    command:  python app.py --input_dir /opt/images/ --output_dir /opt/model_annotations/ --class.names ${CLASS__NAMES}
+    runtime: nvidia

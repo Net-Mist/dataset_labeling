@@ -12,14 +12,15 @@ from distribute_config import Config
 
 coloredlogs.install(level="DEBUG")
 
-Config.define_str("model_path", "", "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
+Config.define_str("model_path", "/opt/model/frozen_inference_graph.pb", "Path of the model to load and execute, for instance"
+                                "/opt/model/frozen_inference_graph.pb. If you're using docker-compose you shouldn't change this.")
 Config.define_str("input_dir",  "", "Path where the images to annotate are stored")
 Config.define_str("output_dir", "", "Path to store pre-annotations (model annotations to help human annotators)")
 with Config.namespace("class"):
     Config.define_str_list("names", [], "name of the classes to annotate")
 with Config.namespace("object_detection"):
     Config.define_float("threshold", 0.2, "Discard boxes with score below this value")
-    Config.define_float("max_width", 0.7, "Discard boxes with width upper this value because in some cases, very large detections are mostly false positives")
+    Config.define_float("max_width", 1.0, "Discard boxes with width upper this value because in some cases, very large detections are mostly false positives")
 
 
 def main():
