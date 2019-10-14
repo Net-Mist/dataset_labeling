@@ -1,4 +1,4 @@
-FROM    tensorflow/tensorflow:1.14.0-gpu-py3
+FROM    tensorflow/tensorflow:1.14.0-py3
 
 # Install dependencies
 WORKDIR /opt
@@ -7,8 +7,6 @@ RUN     apt update && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*
 # libsm6 libxrandr2 libxext6 are for cv2
-RUN     pip install opencv-python pandas absl-py tqdm coloredlogs
-
-ENV PYTHONPATH $PYTHONPATH:/opt/models/research:/opt/models/research/slim
+RUN     pip install opencv-python distribute-config==0.1.0 tqdm coloredlogs
 
 WORKDIR /opt/workspace

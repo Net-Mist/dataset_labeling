@@ -1,25 +1,35 @@
-import cv2, logging, os
-from argparse import ArgumentParser
+import cv2
+import logging
+import os
+import coloredlogs
+from distribute_config import Config
 
-parser = ArgumentParser(description='Extract pictures from a video.')
-parser.add_argument('--file', required=True, help='input file: video to read and split')
-parser.add_argument('--extract_every', type=float, default=1000, help='Time in ms between two extracted images')
-parser.add_argument('--prefix', type=str, default=None, help='prefix to the name of the images')
-parser.add_argument('--outputdir', type=str, default='.', help='where to save the pictures')
+coloredlogs.install(level="DEBUG")
+
+Config.define_str("file", "", "input file: video to read and split")
+Config.define_float("extract_every", 100, "Time in ms between two extracted images")
+Config.define_str("prefix", "", "Prefix to the name of the images")
+Config.define_str("outputdir", ".", "Where to save the pictures")
+
 
 def main():
-    args = parser.parse_args()
+    Config.load_conf("config_video_burst.yml")
+    config = Config.get_dict()
 
-    if(args.prefix is None):
-        args.prefix = get_prefix(args.file)
-        logging.info(f'prefix: {args.prefix}')
+    # check if the script can run
+    assert os.path.isfile(config["file"]), f"Option 'file' need to be provided"
+    os.makedirs(config["outputdir"], exist_ok=True)
+
+    if(config["prefix"] is ""):
+        config["prefix"] = get_prefix(config["file"])
+        logging.info(f'prefix: {config["prefix"]}')
 
     frame_id = 0
     last_save = -10000
-    video = cv2.VideoCapture(args.file)
+    video = cv2.VideoCapture(config["file"])
     if not video.isOpened():
-        raise Exception(f"Cannot open video {args.file}")
-    interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * args.extract_every / 1000)
+        raise Exception(f"Cannot open video {config['file']}")
+    interval_between_pic = int(video.get(cv2.CAP_PROP_FPS) * config["extract_every"] / 1000)
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     logging.info(f'frame_count: {frame_count}')
     frame_count_length = len(str(frame_count))
@@ -30,18 +40,18 @@ def main():
             logging.info('end of video')
             break
         if(frame_id - last_save > interval_between_pic):
-            picture_path = os.path.join(args.outputdir, f'{args.prefix}_{frame_id:0{frame_count_length}}.jpg')
+            picture_path = os.path.join(config["outputdir"], f'{config["prefix"]}_{frame_id:0{frame_count_length}}.jpg')
             cv2.imwrite(picture_path, img)
             last_save = frame_id
             logging.info('Saving picture ' + picture_path)
         frame_id += 1
 
+
 def get_prefix(file):
     basename = os.path.basename(file)
-    result,_ = os.path.splitext(basename)
+    result, _ = os.path.splitext(basename)
     return result
 
+
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format='%(asctime)s : %(message)s', datefmt='%m/%d/%Y %I:%M:%S')
     main()

@@ -9,20 +9,19 @@ from flask import Flask, url_for, redirect, Response, jsonify
 from flask_cors import CORS
 
 import flask
-from absl import flags
-from absl import app as absl_app
+
+from distribute_config import Config
 
 coloredlogs.install(level='DEBUG')
 
-flags.DEFINE_string("images_path", "static/images", "Path where are stored the images to annotate")
-flags.DEFINE_string("human_annotations_path", "static/human_annotations", "Path where are stored human annotation")
-flags.DEFINE_string("model_annotations_path", "static/model_annotations", "Path where are stored model annotation for helping human")
-flags.DEFINE_list("class_names", None, "name of the classes to annotate")
-flags.DEFINE_list("class_colors", [], "colors for each classes")
-
-flags.mark_flag_as_required('class_names')
-
-FLAGS = flags.FLAGS
+Config.define_str("images_path", "static/images", "Path where are stored the images to annotate")
+Config.define_str("human_annotations_path", "static/human_annotations", "Path where are stored human annotation")
+Config.define_str("model_annotations_path", "static/model_annotations", "Path where are stored model annotation for helping human")
+with Config.namespace("class"):
+    Config.define_str_list("names", [], "name of the classes to annotate")
+    Config.define_str_list("colors", [], "colors for each classes")
+Config.define_int("min_height", 0, "Rectangle with lower height will be displayed red")
+Config.define_int("min_width", 0, "Rectangle with lower width will be displayed red")
 
 image_provider = None
 
@@ -32,9 +31,9 @@ class ImageProvider:
         """class providing path of images to process
         """
         # user-provided attributes
-        self.images_path = FLAGS.images_path
-        self.human_annotations_path = FLAGS.human_annotations_path
-        self.model_annotations_path = FLAGS.model_annotations_path
+        self.images_path = Config.get_var("images_path")
+        self.human_annotations_path = Config.get_var("human_annotations_path")
+        self.model_annotations_path = Config.get_var("model_annotations_path")
 
         # other attributes
         self.lock = threading.Lock()
@@ -68,7 +67,7 @@ class ImageProvider:
         self.n_images = len(self.images_list)
 
     def get_image(self):
-        if self.current_image >= self.n_images: # all images done
+        if self.current_image >= self.n_images:  # all images done
             return jsonify({
                 "image_path": "static/all-done__pang-yuhao-1133167-unsplash_light.jpg",
                 "data": {},
@@ -95,8 +94,8 @@ class ImageProvider:
             data = {}
 
         return jsonify({"image_path": image_path,
-                        "data": data, 
-                        "width": width, 
+                        "data": data,
+                        "width": width,
                         "height": height,
                         "image_id": image_id,
                         "n_images": self.n_images})
@@ -104,6 +103,7 @@ class ImageProvider:
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route("/")
 def index():
@@ -123,31 +123,37 @@ def set_image():
     logging.info(message)
 
     for shape in message["detectedObjects"]:
-        assert shape["class"] in FLAGS.class_names
+        assert shape["class"] in Config.get_var("class.names")
 
     json_name = os.path.splitext(os.path.split(message['imageSrc'])[1])[0] + ".json"
 
-    with open(os.path.join(FLAGS.human_annotations_path, json_name), 'w') as outfile:
+    with open(os.path.join(Config.get_var("human_annotations_path"), json_name), 'w') as outfile:
         json.dump({"rectangles": message["detectedObjects"]}, outfile)
 
     return "ok"
 
-@app.route("/get_classes")
-def get_classes():
-    logging.info(FLAGS.class_names) 
-    return jsonify({"classNames": FLAGS.class_names, "classColors": FLAGS.class_colors})
 
-def main(argv):
+@app.route("/get_conf")
+def get_classes():
+    logging.info(Config.get_var("class.names"))
+    return jsonify({"classNames": Config.get_var("class.names"),
+                    "classColors": Config.get_var("class.colors"),
+                    "minHeight": Config.get_var("min_height"),
+                    "minWidth": Config.get_var("min_width")})
+
+
+def main():
     global image_provider
+    Config.load_conf()
+
     image_provider = ImageProvider()
 
     # Write txt file containing class info
-    with open(os.path.join(FLAGS.human_annotations_path, "class_names.txt"), "w") as f:
-        f.write(','.join(FLAGS.class_names))
-
+    with open(os.path.join(Config.get_var("human_annotations_path"), "class_names.txt"), "w") as f:
+        f.write(','.join(Config.get_var("class.names")))
 
     app.run(host='0.0.0.0', threaded=True)
 
 
 if __name__ == '__main__':
-    absl_app.run(main)
+    main()

@@ -5,29 +5,33 @@ import coloredlogs
 import cv2
 import tensorflow as tf
 import numpy as np
-from absl import flags, app
-from tqdm import tqdm # progress bar
-
+from tqdm import tqdm  # progress bar
+from distribute_config import Config
 # Run a frozen model on a set of images and output the detections as .json files, one per image.
 # For now it only keeps "detection_classes" == 1, i.e. "class"="person"
 
 coloredlogs.install(level="DEBUG")
 
-flags.DEFINE_string("model_path", None, "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
-flags.DEFINE_string("input_dir",  None, "Path where the images to annotate are stored")
-flags.DEFINE_string("output_dir", None, "Path to store pre-annotations (model annotations to help human annotators)")
+Config.define_str("model_path", "", "Path of the model to load and execute, for instance models/frozen_inference_graph.pb")
+Config.define_str("input_dir",  "", "Path where the images to annotate are stored")
+Config.define_str("output_dir", "", "Path to store pre-annotations (model annotations to help human annotators)")
+with Config.namespace("class"):
+    Config.define_str_list("names", [], "name of the classes to annotate")
+with Config.namespace("object_detection"):
+    Config.define_float("threshold", 0.2, "Discard boxes with score below this value")
+    Config.define_float("max_width", 0.7, "Discard boxes with width upper this value because in some cases, very large detections are mostly false positives")
 
-flags.mark_flag_as_required("model_path")
-flags.mark_flag_as_required("input_dir")
-flags.mark_flag_as_required("output_dir")
 
-FLAGS = flags.FLAGS
+def main():
+    Config.load_conf()
+    config = Config.get_dict()
+    assert config["model_path"] != "", "model_path can't be empty"
+    assert config["input_dir"] != "", "input_dir can't be empty"
+    assert config["output_dir"] != "", "output_dir can't be empty"
 
-
-def main(argv):
-    os.makedirs(FLAGS.output_dir, exist_ok=True)
-    images_list = os.listdir(FLAGS.input_dir)
-    annotations_list = os.listdir(FLAGS.output_dir)
+    os.makedirs(config["output_dir"], exist_ok=True)
+    images_list = os.listdir(config["input_dir"])
+    annotations_list = os.listdir(config["output_dir"])
 
     # Only keep images that aren't processed yet
     new_list = []
@@ -45,7 +49,7 @@ def main(argv):
 
     # load tensorflow model (must be a frozen model)
     od_graph_def = tf.GraphDef()
-    with tf.gfile.GFile(FLAGS.model_path, 'rb') as fid:
+    with tf.gfile.GFile(config["model_path"], 'rb') as fid:
         serialized_graph = fid.read()
         od_graph_def.ParseFromString(serialized_graph)
         tf.import_graph_def(od_graph_def, name='')
@@ -63,34 +67,33 @@ def main(argv):
         # Run inference
         first_iter = True
         for image_id in tqdm(range(len(images_list))):
-            image = cv2.cvtColor(cv2.imread(os.path.join(FLAGS.input_dir, images_list[image_id])), cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(cv2.imread(os.path.join(config["input_dir"], images_list[image_id])), cv2.COLOR_BGR2RGB)
 
             if first_iter:
-                print(image.shape)
-                first_iter=False
+                logging.info(f"image.shape: {image.shape}")
+                first_iter = False
             height, width = image.shape[:2]
             image_expanded = np.expand_dims(image, axis=0)
             output_dict = session.run(tensor_dict, feed_dict={image_tensor: image_expanded})
 
             good_rectangles = []
             for i, detection_score in enumerate(output_dict["detection_scores"][0]):
-                if detection_score > 0.2:
+                if detection_score >= config["object_detection"]["threshold"]:
                     box = output_dict["detection_boxes"][0][i]  # ymin, xmin, ymax, xmax
-                    if output_dict["detection_classes"][0][i] == 1 \
-                       and box[3]-box[1] < 0.7 : # very large detections are mostly false positives
+                    if box[3]-box[1] < config["object_detection"]["max_width"]:
                         good_rectangles.append({"xMin": int(box[1] * width),
                                                 "yMin": int(box[0] * height),
                                                 "xMax": int(box[3] * width),
                                                 "yMax": int(box[2] * height),
                                                 "detection_score": detection_score.item(),
-                                                "class":"person"})
+                                                "class": config["class"]["names"][int(output_dict["detection_classes"][0][i])-1]})
                 else:
                     break
 
             json_name = os.path.splitext(images_list[image_id])[0] + ".json"
-            with open(os.path.join(FLAGS.output_dir, json_name), 'w') as outfile:
+            with open(os.path.join(config["output_dir"], json_name), 'w') as outfile:
                 json.dump({"rectangles": good_rectangles}, outfile)
 
 
 if __name__ == "__main__":
-    app.run(main)
+    main()

@@ -1,4 +1,6 @@
 /static
 /assets/human_annotations
 /assets/model_annotations/
-/.env
+.env
+frozen_inference_graph.pb
+config*.yml

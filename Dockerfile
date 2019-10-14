@@ -9,8 +9,8 @@ RUN     apt-get update && \
 COPY    front /opt/front/
 RUN     yarn && yarn build
 
-FROM    python:3.7
+FROM    python:3.7.4
 WORKDIR /opt
-RUN     pip3 install coloredlogs flask absl-py Pillow flask_cors
+RUN     pip3 install coloredlogs flask absl-py Pillow flask_cors distribute_config==0.1.0
 COPY    --from=builder /opt/static static
 COPY    app.py app.py
