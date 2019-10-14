@@ -48,10 +48,6 @@ class ImageProvider:
         # Handle lists
         self.images_list = os.listdir(self.images_path)
         self.human_annotations_list = os.listdir(self.human_annotations_path)
-        if self.model_annotations_path:
-            self.model_annotations_list = os.listdir(self.model_annotations_path)
-        else:
-            self.model_annotations_list = []
         logging.info(f"there are {len(self.images_list)} images in total")
 
         # Only keep images that where not yet processed
@@ -86,9 +82,9 @@ class ImageProvider:
         pil_image = Image.open(image_path)
         width, height = pil_image.size
 
-        json_file_name = f"{os.path.splitext(image)[0]}.json"
-        if json_file_name in self.model_annotations_list:
-            with open(os.path.join(self.model_annotations_path, json_file_name), "r") as read_file:
+        json_file_name = os.path.join(self.model_annotations_path, f"{os.path.splitext(image)[0]}.json")
+        if os.path.exists(json_file_name):
+            with open(json_file_name, "r") as read_file:
                 data = json.load(read_file)
         else:
             data = {}
