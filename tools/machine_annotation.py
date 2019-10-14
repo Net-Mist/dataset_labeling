@@ -33,7 +33,10 @@ def main(argv):
     new_list = []
     annotation_ids = [os.path.splitext(file_name)[0] for file_name in annotations_list]
     for image_name in images_list:
-        image_id, _ = os.path.splitext(image_name)
+        image_id, ext = os.path.splitext(image_name)
+        if ext.lower() not in ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif']:
+            print(f'ignoring {image_name} because it has unrecognized extension {ext}')
+            continue
         if image_id not in annotation_ids:
             new_list.append(image_name)
     images_list = new_list
