@@ -20,7 +20,7 @@ def main():
     assert os.path.isfile(config["file"]), f"Option 'file' need to be provided"
     os.makedirs(config["outputdir"], exist_ok=True)
 
-    if(config["prefix"] is ""):
+    if(config["prefix"] == ""):
         config["prefix"] = get_prefix(config["file"])
         logging.info(f'prefix: {config["prefix"]}')
 
